@@ -56,6 +56,9 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
         return false;
     }
 
+    SDL_SetRenderDrawColor(sdl->renderer, 255, 255, 255, 255);
+    SDL_RenderClear(sdl->renderer);
+    SDL_RenderPresent(sdl->renderer);
 
     SDL_Delay(3000); //test
 
