@@ -5,7 +5,7 @@
 
 #include <SDL.h>
 
-// Emulator defs
+// Emulator config
 typedef struct {
     uint32_t width;  // Window width
     uint32_t height; // Window height
@@ -16,7 +16,20 @@ typedef struct {
     SDL_Window *window;
 } sdl_t;
 
-bool sdlInit(emulator_t *emulator, sdl_t *sdl) {
+// Setup emulator config by passed in arguments
+bool emuConfigInit(emulator_t *emulator, const int argc, char **argv) {
+    // Default config
+    emulator->width = 640;
+    emulator->height = 320;
+    (void)argc;
+    (void)argv;
+
+    // TODO: set config according to args
+
+    return true;
+}
+
+bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
     // Init video, audio and timer submodules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -27,8 +40,8 @@ bool sdlInit(emulator_t *emulator, sdl_t *sdl) {
                                     "Chip 8",                   // Title
                                     SDL_WINDOWPOS_CENTERED,     // X pos
                                     SDL_WINDOWPOS_CENTERED,     // Y pos
-                                    emulator->width,            // Width
-                                    emulator->height,           // Height
+                                    emulator.width,            // Width
+                                    emulator.height,           // Height
                                     0);                         // Flags
 
     if (sdl->window == NULL) {
@@ -47,17 +60,13 @@ void cleanup(sdl_t *sdl) {
 }
 
 int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
-
-    // SDL initialization
-    emulator_t emulator = {
-        800, 
-        400
-    };
-
     sdl_t sdl = {0};
-    if (!sdlInit(&emulator, &sdl)) exit(EXIT_FAILURE);
+    emulator_t emulator = {0};
+
+    // Init emu configuration
+    if (!emuConfigInit(&emulator, argc, argv)) exit(EXIT_FAILURE);    
+
+    if (!sdlInit(emulator, &sdl)) exit(EXIT_FAILURE);
 
     // SDL cleanup
     cleanup(&sdl);
