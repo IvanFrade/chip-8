@@ -14,6 +14,7 @@ typedef struct {
 // SDL window
 typedef struct { 
     SDL_Window *window;
+    SDL_Renderer *renderer;
 } sdl_t;
 
 // Setup emulator config by passed in arguments
@@ -36,18 +37,25 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
         return false;
     }
 
-    sdl->window = SDL_CreateWindow(
-                                    "Chip 8",                   // Title
+    sdl->window = SDL_CreateWindow("Chip 8",                   // Title
                                     SDL_WINDOWPOS_CENTERED,     // X pos
                                     SDL_WINDOWPOS_CENTERED,     // Y pos
                                     emulator.width,            // Width
                                     emulator.height,           // Height
                                     0);                         // Flags
-
     if (sdl->window == NULL) {
         SDL_Log("Could not create a window: %s\n", SDL_GetError());
         return false;
     }
+
+    sdl->renderer = SDL_CreateRenderer(sdl->window, 
+                                       -1, 
+                                       0);
+    if (sdl->renderer == NULL) {
+        SDL_Log("Could not create a renderer: %s\n", SDL_GetError());
+        return false;
+    }
+
 
     SDL_Delay(3000); //test
 
@@ -55,6 +63,7 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
 }
 
 void cleanup(sdl_t *sdl) {
+    SDL_DestroyRenderer(sdl->renderer);
     SDL_DestroyWindow(sdl->window);
     SDL_Quit();
 }
