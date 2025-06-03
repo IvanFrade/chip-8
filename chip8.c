@@ -1,14 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include <SDL.h>
 
+// Emulator defs
+typedef struct {
+    uint32_t width;  // Window width
+    uint32_t height; // Window height
+} emulator_t;
+
+// SDL window
 typedef struct { 
     SDL_Window *window;
-} sdl_struct;
+} sdl_t;
 
-bool sdlInit(sdl_struct *sdl) {
+bool sdlInit(emulator_t *emulator, sdl_t *sdl) {
     // Init video, audio and timer submodules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -19,8 +27,8 @@ bool sdlInit(sdl_struct *sdl) {
                                     "Chip 8",                   // Title
                                     SDL_WINDOWPOS_CENTERED,     // X pos
                                     SDL_WINDOWPOS_CENTERED,     // Y pos
-                                    800,                        // Width
-                                    400,                        // Height
+                                    emulator->width,            // Width
+                                    emulator->height,           // Height
                                     0);                         // Flags
 
     if (sdl->window == NULL) {
@@ -33,7 +41,7 @@ bool sdlInit(sdl_struct *sdl) {
     return true; // SDL init successful
 }
 
-void cleanup(sdl_struct *sdl) {
+void cleanup(sdl_t *sdl) {
     SDL_DestroyWindow(sdl->window);
     SDL_Quit();
 }
@@ -43,8 +51,13 @@ int main(int argc, char **argv) {
     (void)argv;
 
     // SDL initialization
-    sdl_struct sdl = {0};
-    if (!sdlInit(&sdl)) exit(EXIT_FAILURE);
+    emulator_t emulator = {
+        800, 
+        400
+    };
+
+    sdl_t sdl = {0};
+    if (!sdlInit(&emulator, &sdl)) exit(EXIT_FAILURE);
 
     // SDL cleanup
     cleanup(&sdl);
