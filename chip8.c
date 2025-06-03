@@ -4,36 +4,37 @@
 
 #include <SDL.h>
 
-SDL_Window *window;
+typedef struct { 
+    SDL_Window *window;
+} sdl_struct;
 
-bool sdlInit() {
+bool sdlInit(sdl_struct *sdl) {
     // Init video, audio and timer submodules
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) != 0) {
         SDL_Log("Unable to initialize SDL: %s\n", SDL_GetError());
         return false;
     }
 
-    // Init window element, centered, 400x200
-    window = SDL_CreateWindow("Chip 8", 
-                                    SDL_WINDOWPOS_CENTERED,
-                                    SDL_WINDOWPOS_CENTERED, 
-                                    400, 
-                                    200, 
-                                    0);
+    sdl->window = SDL_CreateWindow(
+                                    "Chip 8",                   // Title
+                                    SDL_WINDOWPOS_CENTERED,     // X pos
+                                    SDL_WINDOWPOS_CENTERED,     // Y pos
+                                    800,                        // Width
+                                    400,                        // Height
+                                    0);                         // Flags
 
-    if (window == NULL) {
+    if (sdl->window == NULL) {
         SDL_Log("Could not create a window: %s\n", SDL_GetError());
         return false;
     }
 
-    SDL_Delay(10000); //test
+    SDL_Delay(3000); //test
 
     return true; // SDL init successful
 }
 
-void cleanup() {
-    SDL_DestroyWindow(window);
-
+void cleanup(sdl_struct *sdl) {
+    SDL_DestroyWindow(sdl->window);
     SDL_Quit();
 }
 
@@ -42,9 +43,11 @@ int main(int argc, char **argv) {
     (void)argv;
 
     // SDL initialization
-    if (!sdlInit()) exit(EXIT_FAILURE);
+    sdl_struct sdl = {0};
+    if (!sdlInit(&sdl)) exit(EXIT_FAILURE);
 
     // SDL cleanup
+    cleanup(&sdl);
 
     puts("Hello world!");
 
