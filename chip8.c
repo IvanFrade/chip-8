@@ -66,7 +66,7 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
 }
 
 // Screen clear to bg color
-void clearScreen(const emulator_t emulator, sdl_t sdl) {
+void clearScreen(const emulator_t emulator, const sdl_t sdl) {
     const uint32_t r = (emulator.bg_color >> 24) & 0x000000FF;
     const uint32_t g = (emulator.bg_color >> 16) & 0x000000FF;
     const uint32_t b = (emulator.bg_color >> 8) & 0x000000FF;
@@ -76,7 +76,7 @@ void clearScreen(const emulator_t emulator, sdl_t sdl) {
     SDL_RenderClear(sdl.renderer);
 }
 
-void updateScreen(sdl_t sdl) {
+void updateScreen(const sdl_t sdl) {
     SDL_RenderPresent(sdl.renderer);
 }
 
@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
 
     // Main loop
     while (true) {
+        SDL_Delay(16); // Approx 60 fps
         updateScreen(sdl);
-        SDL_Delay(3000); //test
     }
 
     // SDL cleanup
