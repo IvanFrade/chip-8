@@ -26,6 +26,7 @@ typedef struct {
     SDL_Renderer *renderer;
 } sdl_t;
 
+// Tracks machine state
 typedef struct {
     emulator_state_t state;
 } chip8_t;
@@ -78,16 +79,17 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
 }
 
 bool chip8Init(chip8_t *chip8) {
-    chip8->state = RUNNING;
+    chip8->state = RUNNING; // Default state
     return true;
 }
 
 // Screen clear to bg color
 void clearScreen(const emulator_t emulator, const sdl_t sdl) {
+    // Shift by 24, 16 8 and 0 bits respectively to get actual value from hex, then mask to keep first 8 bits only
     const uint32_t r = (emulator.bg_color >> 24) & 0x000000FF;
     const uint32_t g = (emulator.bg_color >> 16) & 0x000000FF;
     const uint32_t b = (emulator.bg_color >> 8) & 0x000000FF;
-    const uint32_t a = emulator.bg_color & 0x000000FF;
+    const uint32_t a = emulator.bg_color & 0x000000FF; // Alpha channel
     
     SDL_SetRenderDrawColor(sdl.renderer, r, g, b, a);
     SDL_RenderClear(sdl.renderer);
@@ -102,13 +104,28 @@ void handleInput(chip8_t *chip8) {
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-        case SDL_QUIT:
-            chip8->state = QUIT;
-            break;
-        
-        default:
-            break;
-        }
+            // Red X on top right of window is pressed
+            case SDL_QUIT:
+                chip8->state = QUIT;
+                break;
+
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        chip8->state = QUIT; // Close window and exit program on escape
+                        break;
+                    default:
+                        break;
+                }
+                break;
+
+            case SDL_KEYUP:
+                break;
+
+            default:
+                // Error?
+                break;
+            }
     }
 }
 
@@ -119,17 +136,17 @@ void cleanup(sdl_t *sdl) {
 }
 
 int main(int argc, char **argv) {
-    // Init structs to allocate memory
+    // Init structs to allocate memory on program startup
     sdl_t sdl = {0};
     emulator_t emulator = {0};
     chip8_t chip8 = {0};
 
-    // Init emu configuration
+    // Init emu config
     if (!emuConfigInit(&emulator, argc, argv)) exit(EXIT_FAILURE);    
     if (!sdlInit(emulator, &sdl)) exit(EXIT_FAILURE);
     if (!chip8Init(&chip8)) exit(EXIT_FAILURE);
 
-    // Initial renderer clear
+    // Initial renderer clear to make sure :)
     clearScreen(emulator, sdl);
 
     // Main loop
@@ -141,8 +158,5 @@ int main(int argc, char **argv) {
 
     // SDL cleanup
     cleanup(&sdl);
-
-    puts("Hello world!");
-
     exit(EXIT_SUCCESS);
 }
