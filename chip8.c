@@ -117,6 +117,7 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
     // Starting defaults
     chip8->PC = entryPoint; // Start at ROM
     chip8->state = RUNNING; // Default state
+    chip8->rom = romName;
 
     // Load font to 0x000 - 0x1FF
     memcpy(&chip8->ram[0], font, sizeof(font));
@@ -128,14 +129,25 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
         return false;
     }
 
-    // Calculate ROM size
+    // Calculate ROM size: go to end of file, read current address, rewind to start copying from start
+    // TODO: test opening file in ab+ mode
     fseek(rom, 0, SEEK_END);
     const long rom_size = ftell(rom);
+    const long max_size = sizeof chip8->ram - entryPoint;
+    rewind(rom);
 
-    memcpy(&chip8->ram[0x200], rom, rom_size);
+    // Check for ROM file size, has to fit between 0x200 and 0xFFF
+    if (rom_size > max_size) { 
+        SDL_Log("File %s is invalaid", romName);
+        return false;
+    }
 
-    fclose(rom);
-    
+    if (fread(&chip8->ram[entryPoint], rom_size, 1, rom) != 1) {
+        SDL_Log("Could not read file %s", romName);
+        return false;    
+    }
+
+    fclose(rom);    
     return true;
 }
 
@@ -200,7 +212,7 @@ int main(int argc, char **argv) {
     // Init emu config
     if (!emuConfigInit(&emulator, argc, argv)) exit(EXIT_FAILURE);    
     if (!sdlInit(emulator, &sdl)) exit(EXIT_FAILURE);
-    if (!chip8Init(&chip8, "IBM_Logo.chip8")) exit(EXIT_FAILURE);
+    if (!chip8Init(&chip8, "IBM_Logo.ch8")) exit(EXIT_FAILURE);
 
     // Initial renderer clear to make sure :)
     clearScreen(emulator, sdl);
