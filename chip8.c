@@ -185,13 +185,16 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
                 printf("Call subroutine\n");
                 break;
             case 0x6:
-                printf("Set register X to value NN\n");
+                printf("Set register V%X to value 0x%02X\n", 
+                    chip8->instruction.X, chip8->instruction.NN);
                 break;
             case 0x7:
-                printf("Add value NN to register X\n");
+                printf("Add value 0x%02X to register V%X\n", 
+                    chip8->instruction.NN, chip8->instruction.X);
                 break;
             case 0xA:
-                printf("Set index register to address NNN\n");
+                printf("Set index register to address 0x%04X\n", 
+                    chip8->instruction.NNN);
                 break;
 
             case 0xD:
