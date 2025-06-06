@@ -45,6 +45,7 @@ typedef struct {
     uint16_t PC;                // Program Counter
 
     uint16_t stack[12];         // 12 bit stack
+    uint16_t *stack_ptr;        // Stack pointer
     uint8_t V_reg[16];          // "V" data registers, V0 - VF
     uint16_t I_reg;             // Index register
 
@@ -129,6 +130,7 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
     chip8->PC = entryPoint; // Start at ROM
     chip8->state = RUNNING; // Default state
     chip8->rom = romName;
+    chip8->stack_ptr = &chip8->stack[0];
 
     // Load font to 0x000 - 0x1FF
     memcpy(&chip8->ram[0], font, sizeof(font));
@@ -162,8 +164,103 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
     return true;
 }
 
-void emulateInstruction(chip8_t *chip8) {
+#ifdef DEBUG
+    void print_debug_info(chip8_t *chip8) {
+        printf("Address: 0x%04X, Opcode: 0x%04X, Desc:", 
+            chip8->PC, chip8->instruction.opcode);
+        switch ((chip8->instruction.opcode >> 12) & 0x000F) {
+            case 0x0:
+                if (chip8->instruction.NN == 0xE0)
+                    printf("Clear the screen")
+                else if (chip8->instruction.NN == 0xEE)
+                    printf("Return from subroutine")
+                break;
+            case 0x1:
+                printf("Jump to address NNN")
+                break;
+            case 0x2:
+                printf("Call subroutine")
+                break;
+            case 0x6:
+                printf("Set register X to value NN")
+                break;
+            case 0x7:
+                printf("Add value NN to register X")
+                break;
+            case 0xA:
+                printf("Set index register to address NNN")
+                break;
 
+            case 0xD:
+                // DXYN: Draw sprite at coordintate VX, VY 8 pixel wide and N pixel high
+                printf("Display")
+                break;
+            default:
+                break;
+        }
+    }
+#endif
+
+
+void emulateInstruction(chip8_t *chip8) {
+    chip8->instruction.opcode = (chip8->ram[chip8->PC] << 8) && chip8->ram[chip8->PC + 1];
+    chip8->PC += 2;
+
+    // Fill out current instruction
+    chip8->instruction.NNN = chip8->instruction.opcode & 0x0FFF;
+    chip8->instruction.NN = chip8->instruction.opcode & 0x00FF;
+    chip8->instruction.N = chip8->instruction.opcode & 0x000F;
+    chip8->instruction.X = (chip8->instruction.opcode >> 8) & 0x000F;
+    chip8->instruction.Y = (chip8->instruction.opcode >> 4) & 0x000F;
+
+    #ifdef DEBUG
+        print_debug_info(chip8);
+    #endif
+
+    switch ((chip8->instruction.opcode >> 12) & 0x000F) {
+        case 0x0:
+            if (chip8->instruction.NN == 0xE0)
+                memset(chip8->display, false, sizeof(chip8->display)); // 0X00E0: Clear screen
+            else if (chip8->instruction.NN == 0xEE) {
+                chip8->stack_ptr--;
+                chip8->PC = *chip8->stack_ptr;
+            }
+            break;
+        
+        case 0x1:
+            // 0x1NNN: Jump to address NNN
+            chip8->PC = chip8->instruction.NNN;
+            break;
+
+        case 0x2:
+            // 2NNN: Call subroutine at address NNN
+            *chip8->stack_ptr = chip8->PC;          // Store address to return to (already incremented) in stack
+            chip8->stack_ptr++;                     // and set pointer to next level of stack
+            chip8->PC = chip8->instruction.NNN;
+            break;
+
+        case 0x6:
+            // 0x6XNN: Set register X to value NN
+            chip8->V_reg[chip8->instruction.X] = chip8->instruction.NN;
+            break;
+
+        case 0x7:
+            // 0x7XNN: Add value NN to register X
+            chip8->V_reg[chip8->instruction.X] += chip8->instruction.NN;
+            break;
+
+        case 0xA:
+            // 0xANNN: Set index register to address NNN
+            chip8->I_reg = chip8->instruction.NNN;
+            break;
+
+        case 0xD:
+            // DXYN: Draw sprite at coordintate VX, VY 8 pixel wide and N pixel high
+            break;
+
+        default:
+            break;
+    }
 }
 
 // Screen clear to bg color
