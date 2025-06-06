@@ -209,7 +209,7 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
 #endif
 
 
-void emulateInstruction(chip8_t *chip8) {
+void emulateInstruction(chip8_t *chip8, const emulator_t emulator) {
     chip8->instruction.opcode = (chip8->ram[chip8->PC] << 8) | chip8->ram[chip8->PC + 1];
     chip8->PC += 2;
 
@@ -263,6 +263,17 @@ void emulateInstruction(chip8_t *chip8) {
 
         case 0xD:
             // DXYN: Draw sprite at coordintate VX, VY 8 pixel wide and N pixel high
+            // Read from memory I register
+            // Pixels are XOR'd with sprite and flipped
+            // Carry flag VF is set if any pixels are set to off
+            const uint8_t X_coord = chip8->V_reg[chip8->instruction.X] % emulator.width;
+            const uint8_t Y_coord = chip8->V_reg[chip8->instruction.Y] % emulator.height;
+
+            chip8->V[0xF] = 0; // Initialize carry flag to 0
+
+            for (uint8_t i = 0; i < chip8->instruction.N; i++) {
+                const uint8_t sprite = chip8->ram[chip8->I_reg + i];          
+            }
             break;
 
         default:
