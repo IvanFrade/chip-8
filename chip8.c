@@ -26,6 +26,16 @@ typedef struct {
     SDL_Renderer *renderer;
 } sdl_t;
 
+typedef struct {
+    uint16_t opcode;
+    uint16_t NNN;       // 12 bit address or constant
+    uint8_t NN;         // 8 bit constant
+    uint8_t N;          // 4 bit constant
+    uint8_t X;          // 4 bit register 
+    uint8_t Y;          // 4 bit register 
+
+} instruction_t;
+
 // Emulator object
 typedef struct {
     uint32_t ram[4096];         // 4KB ram
@@ -44,6 +54,7 @@ typedef struct {
     emulator_state_t state;
 
     char *rom;                  // Current ROM
+    instruction_t instruction;  // Current instruction
 } chip8_t;
 
 // Setup emulator config by passed in arguments
@@ -151,6 +162,10 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
     return true;
 }
 
+void emulateInstruction(chip8_t *chip8) {
+
+}
+
 // Screen clear to bg color
 void clearScreen(const emulator_t emulator, const sdl_t sdl) {
     // Shift by 24, 16 8 and 0 bits respectively to get actual value from hex, then mask to keep first 8 bits only
@@ -224,10 +239,10 @@ int main(int argc, char **argv) {
     // Main loop
     while (chip8.state != QUIT) {
         handleInput(&chip8);
-
-
         if (chip8.state == PAUSED) continue;
-        
+
+        emulateInstruction(&chip8);
+
         SDL_Delay(16); // Approx 60 fps
         updateScreen(sdl);
     }
