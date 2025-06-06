@@ -167,35 +167,42 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
 #ifdef DEBUG
     void print_debug_info(chip8_t *chip8) {
         printf("Address: 0x%04X, Opcode: 0x%04X, Desc:", 
-            chip8->PC, chip8->instruction.opcode);
+            chip8->PC - 2, chip8->instruction.opcode);
         switch ((chip8->instruction.opcode >> 12) & 0x000F) {
             case 0x0:
                 if (chip8->instruction.NN == 0xE0)
-                    printf("Clear the screen")
-                else if (chip8->instruction.NN == 0xEE)
-                    printf("Return from subroutine")
+                    printf("Clear the screen\n");
+                else if (chip8->instruction.NN == 0xEE) {
+                    printf("Return from subroutine\n");
+                    chip8->stack_ptr--;
+                    chip8->PC = *chip8->stack_ptr;
+                }
+                else 
+                    printf("Opcode not implemented\n");
                 break;
             case 0x1:
-                printf("Jump to address NNN")
+                printf("Jump to address NNN\n");
+                chip8->PC = chip8->instruction.NNN;
                 break;
             case 0x2:
-                printf("Call subroutine")
+                printf("Call subroutine\n");
                 break;
             case 0x6:
-                printf("Set register X to value NN")
+                printf("Set register X to value NN\n");
                 break;
             case 0x7:
-                printf("Add value NN to register X")
+                printf("Add value NN to register X\n");
                 break;
             case 0xA:
-                printf("Set index register to address NNN")
+                printf("Set index register to address NNN\n");
                 break;
 
             case 0xD:
                 // DXYN: Draw sprite at coordintate VX, VY 8 pixel wide and N pixel high
-                printf("Display")
+                printf("Display\n");
                 break;
             default:
+                printf("Opcode not implemented\n");
                 break;
         }
     }
