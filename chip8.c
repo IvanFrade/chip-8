@@ -38,7 +38,7 @@ typedef struct {
 
 // Emulator object
 typedef struct {
-    uint32_t ram[4096];         // 4KB ram
+    uint8_t ram[4096];          // 4KB ram
     bool display[64*32];        // Bool array of single pixels (on/off)
     bool keyboard[16];          // Hex keypad 0-F
 
@@ -166,23 +166,20 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
 
 #ifdef DEBUG
     void print_debug_info(chip8_t *chip8) {
-        printf("Address: 0x%04X, Opcode: 0x%04X, Desc:", 
-            chip8->PC - 2, chip8->instruction.opcode);
+        printf("Address: 0x%04X, Opcode: 0x%04X, RAM content: 0x%04X, 0x%04X, Desc:", 
+            chip8->PC - 2, chip8->instruction.opcode, chip8->ram[chip8->PC - 2], chip8->ram[chip8->PC - 1]);
         switch ((chip8->instruction.opcode >> 12) & 0x000F) {
             case 0x0:
                 if (chip8->instruction.NN == 0xE0)
                     printf("Clear the screen\n");
                 else if (chip8->instruction.NN == 0xEE) {
                     printf("Return from subroutine\n");
-                    chip8->stack_ptr--;
-                    chip8->PC = *chip8->stack_ptr;
                 }
                 else 
                     printf("Opcode not implemented\n");
                 break;
             case 0x1:
                 printf("Jump to address NNN\n");
-                chip8->PC = chip8->instruction.NNN;
                 break;
             case 0x2:
                 printf("Call subroutine\n");
@@ -210,7 +207,7 @@ bool chip8Init(chip8_t *chip8, char romName[]) {
 
 
 void emulateInstruction(chip8_t *chip8) {
-    chip8->instruction.opcode = (chip8->ram[chip8->PC] << 8) && chip8->ram[chip8->PC + 1];
+    chip8->instruction.opcode = (chip8->ram[chip8->PC] << 8) | chip8->ram[chip8->PC + 1];
     chip8->PC += 2;
 
     // Fill out current instruction
