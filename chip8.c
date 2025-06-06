@@ -182,6 +182,10 @@ void handleInput(chip8_t *chip8) {
                     case SDLK_ESCAPE:
                         chip8->state = QUIT; // Close window and exit program on escape
                         break;
+                    case SDLK_SPACE: // On spacebar press pause/resume emulation
+                        if (chip8->state == RUNNING) chip8->state = PAUSED;
+                        else chip8->state = RUNNING;
+                        return;
                     default:
                         break;
                 }
@@ -212,7 +216,7 @@ int main(int argc, char **argv) {
     // Init emu config
     if (!emuConfigInit(&emulator, argc, argv)) exit(EXIT_FAILURE);    
     if (!sdlInit(emulator, &sdl)) exit(EXIT_FAILURE);
-    if (!chip8Init(&chip8, "IBM_Logo.ch8")) exit(EXIT_FAILURE);
+    if (!chip8Init(&chip8, argv[1])) exit(EXIT_FAILURE);
 
     // Initial renderer clear to make sure :)
     clearScreen(emulator, sdl);
@@ -220,6 +224,10 @@ int main(int argc, char **argv) {
     // Main loop
     while (chip8.state != QUIT) {
         handleInput(&chip8);
+
+
+        if (chip8.state == PAUSED) continue;
+        
         SDL_Delay(16); // Approx 60 fps
         updateScreen(sdl);
     }
