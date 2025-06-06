@@ -78,7 +78,7 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
 }
 
 bool chip8Init(chip8_t *chip8) {
-    chip8 = chip8;
+    chip8->state = RUNNING;
     return true;
 }
 
@@ -97,13 +97,13 @@ void updateScreen(const sdl_t sdl) {
     SDL_RenderPresent(sdl.renderer);
 }
 
-void handleInput() {
+void handleInput(chip8_t *chip8) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_QUIT:
-            // close window
+            chip8->state = QUIT;
             break;
         
         default:
@@ -133,7 +133,8 @@ int main(int argc, char **argv) {
     clearScreen(emulator, sdl);
 
     // Main loop
-    while (true) {
+    while (chip8.state != QUIT) {
+        handleInput(&chip8);
         SDL_Delay(16); // Approx 60 fps
         updateScreen(sdl);
     }
