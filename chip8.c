@@ -26,9 +26,22 @@ typedef struct {
     SDL_Renderer *renderer;
 } sdl_t;
 
-// Tracks machine state
+// Emulator object
 typedef struct {
+    uint32_t ram[4096];         // 4KB ram
+    bool display[64*32];        // Bool array of single pixels (on/off)
+    bool keyboard[16];          // Hex keypad 0-F
+
+    uint16_t stack[12];         // 12 bit stack
+    uint8_t V_reg[16];          // "V" data registers, V0 - VF
+    uint16_t I_reg;             // Index register
+
+    uint8_t delay_timer;        // Counts down at 60hz
+    uint8_t sound_timer;        // Counts down at 60hz, plays sounds while >0
+    
     emulator_state_t state;
+
+    char *rom;                  // Current ROM
 } chip8_t;
 
 // Setup emulator config by passed in arguments
