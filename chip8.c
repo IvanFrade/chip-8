@@ -32,6 +32,8 @@ typedef struct {
     bool display[64*32];        // Bool array of single pixels (on/off)
     bool keyboard[16];          // Hex keypad 0-F
 
+    uint16_t PC;                // Program Counter
+
     uint16_t stack[12];         // 12 bit stack
     uint8_t V_reg[16];          // "V" data registers, V0 - VF
     uint16_t I_reg;             // Index register
@@ -91,8 +93,49 @@ bool sdlInit(const emulator_t emulator, sdl_t *sdl) {
     return true; // SDL init successful
 }
 
-bool chip8Init(chip8_t *chip8) {
+bool chip8Init(chip8_t *chip8, char romName[]) {
+    const uint32_t entryPoint = 0x200; // Entry point for most ROMs is typically 0x200
+    const uint8_t font[] = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+
+    // Starting defaults
+    chip8->PC = entryPoint; // Start at ROM
     chip8->state = RUNNING; // Default state
+
+    // Load font to 0x000 - 0x1FF
+    memcpy(&chip8->ram[0], font, sizeof(font));
+
+    // Load ROM
+    FILE *rom = fopen(romName, "rb");
+    if (!rom) { 
+        SDL_Log("File %s not found", romName);
+        return false;
+    }
+
+    // Calculate ROM size
+    fseek(rom, 0, SEEK_END);
+    const long rom_size = ftell(rom);
+
+    memcpy(&chip8->ram[0x200], rom, rom_size);
+
+    fclose(rom);
+    
     return true;
 }
 
@@ -157,7 +200,7 @@ int main(int argc, char **argv) {
     // Init emu config
     if (!emuConfigInit(&emulator, argc, argv)) exit(EXIT_FAILURE);    
     if (!sdlInit(emulator, &sdl)) exit(EXIT_FAILURE);
-    if (!chip8Init(&chip8)) exit(EXIT_FAILURE);
+    if (!chip8Init(&chip8, "IBM_Logo.chip8")) exit(EXIT_FAILURE);
 
     // Initial renderer clear to make sure :)
     clearScreen(emulator, sdl);
