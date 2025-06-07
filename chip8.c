@@ -266,13 +266,33 @@ void emulateInstruction(chip8_t *chip8, const emulator_t emulator) {
             // Read from memory I register
             // Pixels are XOR'd with sprite and flipped
             // Carry flag VF is set if any pixels are set to off
-            const uint8_t X_coord = chip8->V_reg[chip8->instruction.X] % emulator.width;
-            const uint8_t Y_coord = chip8->V_reg[chip8->instruction.Y] % emulator.height;
+            uint8_t X_coord = chip8->V_reg[chip8->instruction.X] % emulator.width;
+            uint8_t Y_coord = chip8->V_reg[chip8->instruction.Y] % emulator.height;
+            const uint8_t startingX = X_coord;
 
-            chip8->V[0xF] = 0; // Initialize carry flag to 0
+            chip8->V_reg[0xF] = 0; // Initialize carry flag to 0
 
             for (uint8_t i = 0; i < chip8->instruction.N; i++) {
-                const uint8_t sprite = chip8->ram[chip8->I_reg + i];          
+                const uint8_t sprite = chip8->ram[chip8->I_reg + i];  
+                X_coord = startingX;
+
+                for (int j = 7; j >= 0; j++) {
+                    bool *displayPixel = &chip8->display[Y_coord * emulator.height + X_coord];
+                    bool spritePixel = (sprite & (1 << j));
+
+                    // If pixel is on on both display and sprite set VF flag
+                    if (spritePixel && *displayPixel)
+                            chip8->V_reg[0xF] = 1;
+                        
+                    // XOR pixel on display and sprite
+                    *displayPixel ^= spritePixel;
+
+                    // If sprite hits right edge of screen stop drawing current row
+                    if (++X_coord > emulator.width) break;
+                }
+
+                // If sprite hits bottom edge of screen stop drawing sprite
+                if (++Y_coord > emulator.height) break;
             }
             break;
 
@@ -356,7 +376,7 @@ int main(int argc, char **argv) {
         handleInput(&chip8);
         if (chip8.state == PAUSED) continue;
 
-        emulateInstruction(&chip8);
+        emulateInstruction(&chip8, emulator);
 
         SDL_Delay(16); // Approx 60 fps
         updateScreen(sdl);
